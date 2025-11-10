@@ -1,2 +1,0 @@
-DATABASE_URL = "tutaj adres postgres"
-JWT_SECRET="e78e80fbb00346daff7c08e4fd46d39e"

@@ -29,3 +29,10 @@ Thumbs.db
 # Logs
 logs
 *.log
+
+# Environment files
+.env
+backend/.env
+
+# Secrets
+backend/jwt.txt
