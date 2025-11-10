@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 
+const API_URL = import.meta.env.VITE_API_URL || '';
+
 function SeriesManager() {
     const [seriesList, setSeriesList] = useState([]);
     const [error, setError] = useState('');
@@ -23,7 +25,7 @@ function SeriesManager() {
 
     const fetchSeries = async () => {
         try {
-            const res = await axios.get('/api/series');
+            const res = await axios.get(`${API_URL}/api/series`);
             setSeriesList(res.data);
         } catch (err) {
             setError('Nie udało się pobrać listy serii.');
@@ -53,7 +55,7 @@ function SeriesManager() {
     const handleDelete = async (id) => {
         if (window.confirm('Czy na pewno chcesz usunąć tę serię i wszystkie jej pomiary?')) {
             try {
-                await axios.delete(`/api/series/${id}`);
+                await axios.delete(`${API_URL}/api/series/${id}`);
                 setMessage('Seria usunięta.');
                 fetchSeries(); // Odśwież listę
                 clearForm();
@@ -79,11 +81,11 @@ function SeriesManager() {
         try {
             if (formData.id) {
                 // --- Tryb EDYCJI (PUT) ---
-                await axios.put(`/api/series/${formData.id}`, payload);
+                await axios.put(`${API_URL}/api/series/${formData.id}`, payload);
                 setMessage('Seria zaktualizowana.');
             } else {
                 // --- Tryb TWORZENIA (POST) ---
-                await axios.post('/api/series', payload);
+                await axios.post(`${API_URL}/api/series`, payload);
                 setMessage('Seria dodana.');
             }
             fetchSeries(); // Odśwież listę
@@ -110,22 +112,57 @@ function SeriesManager() {
                     <h3>{formData.id ? 'Edytuj Serię' : 'Dodaj Nową Serię'}</h3>
                     <div className="form-group">
                         <label>Nazwa:</label>
-                        <input type="text" name="name" value={formData.name} onChange={handleChange} required />
+                        <input
+                            type="text"
+                            name="name"
+                            value={formData.name}
+                            onChange={handleChange}
+                            required
+                        />
                     </div>
                     <div className="form-group">
                         <label>Wartość Min:</label>
-                        <input type="number" step="0.01" name="min_value" value={formData.min_value} onChange={handleChange} required />
+                        <input
+                            type="number"
+                            step="0.01"
+                            name="min_value"
+                            value={formData.min_value}
+                            onChange={handleChange}
+                            required
+                        />
                     </div>
                     <div className="form-group">
                         <label>Wartość Max:</label>
-                        <input type="number" step="0.01" name="max_value" value={formData.max_value} onChange={handleChange} required />
+                        <input
+                            type="number"
+                            step="0.01"
+                            name="max_value"
+                            value={formData.max_value}
+                            onChange={handleChange}
+                            required
+                        />
                     </div>
                     <div className="form-group">
                         <label>Kolor na wykresie:</label>
-                        <input type="color" name="color" value={formData.color} onChange={handleChange} />
+                        <input
+                            type="color"
+                            name="color"
+                            value={formData.color}
+                            onChange={handleChange}
+                        />
                     </div>
-                    <button type="submit" className="btn-submit">{formData.id ? 'Zapisz zmiany' : 'Dodaj'}</button>
-                    {formData.id && <button type="button" onClick={clearForm} className="btn-cancel">Anuluj edycję</button>}
+                    <button type="submit" className="btn-submit">
+                        {formData.id ? 'Zapisz zmiany' : 'Dodaj'}
+                    </button>
+                    {formData.id && (
+                        <button
+                            type="button"
+                            onClick={clearForm}
+                            className="btn-cancel"
+                        >
+                            Anuluj edycję
+                        </button>
+                    )}
                 </form>
 
                 {/* --- Lista Istniejących Serii --- */}
@@ -133,27 +170,44 @@ function SeriesManager() {
                     <h3>Istniejące Serie</h3>
                     <table>
                         <thead>
-                        <tr>
-                            <th>Nazwa</th>
-                            <th>Zakres</th>
-                            <th>Kolor</th>
-                            <th>Akcje</th>
-                        </tr>
+                            <tr>
+                                <th>Nazwa</th>
+                                <th>Zakres</th>
+                                <th>Kolor</th>
+                                <th>Akcje</th>
+                            </tr>
                         </thead>
                         <tbody>
-                        {seriesList.map(s => (
-                            <tr key={s.id}>
-                                <td>{s.name}</td>
-                                <td>{s.min_value} - {s.max_value}</td>
-                                <td>
-                                    <div style={{ width: '20px', height: '20px', backgroundColor: s.color, border: '1px solid #ccc' }}></div>
-                                </td>
-                                <td className="actions-cell">
-                                    <button onClick={() => handleEditClick(s)} className="btn-edit">Edytuj</button>
-                                    <button onClick={() => handleDelete(s.id)} className="btn-delete">Usuń</button>
-                                </td>
-                            </tr>
-                        ))}
+                            {seriesList.map(s => (
+                                <tr key={s.id}>
+                                    <td>{s.name}</td>
+                                    <td>{s.min_value} - {s.max_value}</td>
+                                    <td>
+                                        <div
+                                            style={{
+                                                width: '20px',
+                                                height: '20px',
+                                                backgroundColor: s.color,
+                                                border: '1px solid #ccc',
+                                            }}
+                                        ></div>
+                                    </td>
+                                    <td className="actions-cell">
+                                        <button
+                                            onClick={() => handleEditClick(s)}
+                                            className="btn-edit"
+                                        >
+                                            Edytuj
+                                        </button>
+                                        <button
+                                            onClick={() => handleDelete(s.id)}
+                                            className="btn-delete"
+                                        >
+                                            Usuń
+                                        </button>
+                                    </td>
+                                </tr>
+                            ))}
                         </tbody>
                     </table>
                 </div>
