@@ -7,7 +7,7 @@ import TableComponent from '../components/TableComponent.jsx';
 import MeasurementForm from '../components/MeasurementForm.jsx';
 import EditMeasurementModal from '../components/EditMeasurementModal.jsx';
 
-const API_URL = '/api';
+const API_URL = import.meta.env.VITE_API_URL || '/api';
 
 function Dashboard() {
     const { isAuthenticated, user } = useAuth();

@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 
+const API_URL = import.meta.env.VITE_API_URL || '';
+
 
 function EditMeasurementModal({ record, series, onClose, onSave, setError }) {
     const [formData, setFormData] = useState({ ...record });
@@ -38,7 +40,8 @@ function EditMeasurementModal({ record, series, onClose, onSave, setError }) {
             };
 
             // Używamy endpointu PUT
-            await axios.put(`/api/measurements/${record.id}`, payload);
+            await axios.put(`${API_URL}/api/measurements/${record.id}`, payload);
+
 
             onSave();
             onClose();

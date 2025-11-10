@@ -1,6 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 
+const API_URL = import.meta.env.VITE_API_URL || '';
+
+
 // Props:
 // - series: lista serii do wyboru w <select>
 // - onMeasurementAdded: funkcja (callback) do odświeżenia danych w Dashboard
@@ -33,7 +36,7 @@ function MeasurementForm({ series, onMeasurementAdded, setError }) {
                 timestamp: timestamp || null, // Wyślij null, jeśli puste (baza ustawi domyślny)
             };
 
-            await axios.post('/api/measurements', payload);
+            await axios.post(`${API_URL}/api/measurements`, payload);
 
             // Sukces
             onMeasurementAdded(); // Wywołaj callback, aby Dashboard odświeżył dane
