@@ -1,0 +1,645 @@
+@page {
+    size: A4; /* Definiuje format, ale będzie działać też na innych */
+    margin: 1.5cm; /* Tworzy "płótno" z marginesem 1.5cm z każdej strony */
+}
+/* Podstawowe style */
+body {
+    font-family: Arial, sans-serif;
+    margin: 0;
+    background-color: #f0f2f5;
+}
+
+/* Układ (Flexbox dla responsywności) */
+.dashboard-container {
+    display: flex;
+    flex-direction: column;
+    padding: 1rem;
+}
+
+.printable-area {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+}
+
+/* --- Responsywność (Mobile-first) --- */
+
+/* Domyślnie (mobilki): Wykres nad tabelą */
+.chart-wrapper {
+    width: 100%;
+}
+.table-wrapper {
+    width: 100%;
+    overflow-x: auto; /* Umożliwia przewijanie tabel w poziomie */
+}
+
+/* --- Widok Desktop/Tablet (zgodnie z wymaganiami) --- */
+@media (min-width: 768px) {
+    .printable-area {
+        flex-direction: row; /* Obok siebie */
+        align-items: flex-start;
+    }
+    .chart-wrapper {
+        flex: 2; /* Wykres zajmuje 2/3 */
+    }
+    .table-wrapper {
+        flex: 1; /* Tabela 1/3 */
+        max-height: 600px;
+        overflow-y: auto;
+    }
+}
+
+/* --- Widok do druku (zgodnie z wymaganiami) --- */
+@media print {
+    /* Ukryj elementy interfejsu */
+    .no-print, .navbar {
+        display: none !important;
+    }
+
+    /* Resetuj style dla druku */
+    body {
+        background-color: #fff;
+        font-size: 10pt; /* Mniejsza czcionka dla druku */
+
+        /* --- RAMKA CAŁA --- */
+        border: 1px solid #000;   /* Dodaje ramkę do body */
+        box-sizing: border-box; /* Kluczowe: padding nie rozszerzy ramki */
+        padding: 1cm;             /* Odstęp między ramką a treścią */
+
+        /* Resetowanie wymiarów body na potrzeby wydruku */
+        width: auto;
+        min-height: auto;
+        margin: 0;
+    }
+
+    .dashboard-container, .printable-area {
+        padding: 0;
+        margin: 0;
+        box-shadow: none;
+        width: 100%; /* Upewnij się, że kontenery wypełniają body */
+    }
+
+    /* Upewnij się, że wykres i tabela się mieszczą */
+    .chart-wrapper, .table-wrapper {
+        flex: 1;
+        width: 100% !important;
+        max-height: none !important;
+        overflow: visible !important;
+        page-break-inside: avoid; /* Unikaj łamania strony w środku tabeli/wykresu */
+        box-shadow: none;
+        padding: 0;
+    }
+
+    .printable-area {
+        flex-direction: column; /* Na wydruku zawsze jedno pod drugim */
+        gap: 1.5rem; /* Dodaj trochę odstępu między wykresem a tabelą */
+    }
+
+    /* --- POPRAWKA DRUKOWANIA WYKRESU (Kluczowa) --- */
+    .chart-container {
+        height: auto !important; /* Usuwa stałą wysokość 400px */
+        width: 100% !important;
+        max-height: none !important;
+        overflow: visible !important;
+        position: static !important;
+        padding: 0 !important;
+        box-shadow: none !important;
+        border: none; /* Usuwamy podwójną ramkę, bo mamy już na body */
+    }
+
+    .chart-container canvas {
+        max-width: 100% !important;
+        height: auto !important;
+    }
+
+    /* Ukryj też inne niepotrzebne elementy */
+    .profile-container,
+    .login-container,
+    .controls-bar,
+    .form-section,
+    .welcome-box,
+    .series-manager-container {
+        display: none !important;
+    }
+}
+
+
+/* --- Style dla Profile.jsx i Login.jsx --- */
+.profile-container,
+.login-container {
+    max-width: 400px;
+    margin: 2rem auto;
+    padding: 2rem;
+    background-color: #ffffff;
+    border-radius: 8px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+}
+
+.profile-form h2,
+.login-container h2 {
+    text-align: center;
+    color: #2c3e50;
+    margin-top: 0;
+}
+
+/* Zmieniono selektor, aby uniknąć konfliktu (było: .profile-form .form-group) */
+.profile-container .form-group,
+.login-container .form-group {
+    margin-bottom: 1rem;
+}
+
+.profile-container .form-group label,
+.login-container label {
+    display: block;
+    margin-bottom: 0.5rem;
+    font-weight: 600;
+}
+
+.profile-container .form-group input,
+.login-container input {
+    width: 100%;
+    padding: 10px;
+    box-sizing: border-box;
+    border: 1px solid #bdc3c7;
+    border-radius: 4px;
+}
+
+.profile-form .btn-submit,
+.login-container button {
+    width: 100%;
+    padding: 12px;
+    background-color: #3498db;
+    color: white;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 1rem;
+    font-weight: 600;
+    transition: background-color 0.2s;
+}
+
+.profile-form .btn-submit:hover,
+.login-container button:hover {
+    background-color: #2980b9;
+}
+
+/* Komunikaty błędów i sukcesu */
+.message-error,
+.error {
+    color: #e74c3c;
+    background-color: #fbeae9;
+    border: 1px solid #e74c3c;
+    padding: 10px;
+    border-radius: 4px;
+    text-align: center;
+}
+
+.message-success {
+    color: #27ae60;
+    background-color: #eaf7ee;
+    border: 1px solid #27ae60;
+    padding: 10px;
+    border-radius: 4px;
+    text-align: center;
+}
+
+/* --- Style dla Dashboard --- */
+
+.welcome-box {
+    background-color: #eaf7ee;
+    border: 1px solid #27ae60;
+    color: #229954;
+    padding: 1rem;
+    border-radius: 8px;
+    margin-bottom: 1rem;
+}
+
+.controls-bar {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 1rem;
+    padding: 1rem;
+    background-color: #ecf0f1;
+    border-radius: 8px;
+    margin-bottom: 1rem;
+    align-items: flex-end;
+}
+
+.controls-bar fieldset {
+    border: 1px solid #bdc3c7;
+    border-radius: 4px;
+    padding: 0.5rem 1rem;
+}
+
+.controls-bar label {
+    margin-right: 0.5rem;
+}
+
+.controls-bar input[type="datetime-local"] {
+    border: 1px solid #ccc;
+    padding: 4px;
+    border-radius: 4px;
+}
+
+.controls-bar button, .btn-print {
+    background-color: #3498db;
+    color: white;
+    border: none;
+    padding: 8px 12px;
+    border-radius: 4px;
+    cursor: pointer;
+}
+.controls-bar button:hover, .btn-print:hover {
+    background-color: #2980b9;
+}
+
+/* --- Style dla Formularza (Dodawania Pomiaru) --- */
+.form-section {
+    background: #ffffff;
+    padding: 1.5rem;
+    border-radius: 8px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+    margin-bottom: 1rem;
+}
+.form-section h2 {
+    margin-top: 0;
+}
+/* Ogólna klasa dla grup formularzy */
+.form-group {
+    margin-bottom: 1rem;
+}
+.form-group label {
+    display: block;
+    font-weight: 600;
+    margin-bottom: 0.25rem;
+}
+.form-group input,
+.form-group select {
+    width: 100%;
+    padding: 8px;
+    box-sizing: border-box; /* Ważne dla 100% szerokości */
+    border: 1px solid #ccc;
+    border-radius: 4px;
+}
+.form-section .btn-submit {
+    width: 100%;
+    padding: 10px;
+    background-color: #27ae60;
+    color: white;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 1rem;
+}
+.form-section .btn-submit:hover {
+    background-color: #229954;
+}
+
+/* --- Style dla Wykresu --- */
+.chart-container {
+    position: relative;
+    height: 400px; /* Ta wysokość będzie działać na ekranie */
+    background: #fff;
+    padding: 1rem;
+    border-radius: 8px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+}
+
+/* --- Style dla Tabeli --- */
+.table-container {
+    background: #fff;
+    padding: 1rem;
+    border-radius: 8px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+    /* max-height i overflow są w @media (min-width: 768px) */
+}
+table {
+    width: 100%;
+    border-collapse: collapse;
+}
+th, td {
+    padding: 8px 12px;
+    text-align: left;
+    border-bottom: 1px solid #ecf0f1;
+}
+th {
+    background-color: #f9f9f9;
+}
+
+/* Podświetlenie wiersza */
+tr.highlighted {
+    background-color: #f1c40f !important;
+    color: #333;
+}
+tr:hover {
+    background-color: #fdf5e6;
+    cursor: pointer;
+}
+
+/* Przyciski akcji */
+.actions-cell {
+    white-space: nowrap;
+}
+.btn-edit, .btn-delete {
+    padding: 4px 8px;
+    border: none;
+    border-radius: 4px;
+    color: white;
+    cursor: pointer;
+    margin-right: 5px;
+}
+.btn-edit {
+    background-color: #f39c12;
+}
+.btn-edit:hover {
+    background-color: #e67e22;
+}
+.btn-delete {
+    background-color: #e74c3c;
+}
+.btn-delete:hover {
+    background-color: #c0392b;
+}
+
+/* --- Style dla SeriesManager.jsx --- */
+.series-manager-container {
+    max-width: 1200px;
+    margin: 1rem auto;
+    padding: 1.5rem;
+    background-color: #fff;
+    border-radius: 8px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+}
+
+.series-manager-container h2 {
+    margin-top: 0;
+    text-align: center;
+    color: #2c3e50;
+}
+
+.series-content {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 2rem;
+}
+
+.series-form {
+    flex: 1;
+    min-width: 300px;
+    padding: 1.5rem;
+    background-color: #f9f9f9;
+    border-radius: 8px;
+    border: 1px solid #ecf0f1;
+}
+
+.series-form h3 {
+    margin-top: 0;
+}
+
+.series-list {
+    flex: 2;
+    min-width: 400px;
+}
+
+.series-list table {
+    width: 100%;
+}
+
+.btn-cancel {
+    background-color: #7f8c8d;
+    color: white;
+    padding: 10px;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    margin-top: 10px;
+    width: 100%;
+}
+.btn-cancel:hover {
+    background-color: #6c7a7b;
+}
+
+/* Dostosuj style przycisków w tabeli dla SeriesManager */
+.series-list .actions-cell {
+    display: flex;
+    gap: 5px;
+}
+
+/* --- Style dla Nawigacji (Navbar) --- */
+.navbar {
+    display: flex; /* Używamy Flexbox do wyrównania */
+    align-items: center; /* Wyrównanie w pionie */
+    background-color: #ffffff; /* Białe tło pasujące do reszty */
+    padding: 0 1rem; /* Wewnętrzny padding (góra/dół 0, boki 1rem) */
+    border-radius: 8px; /* Zaokrąglenie pasujące do reszty */
+    margin: 1rem; /* Odsunięcie od krawędzi (tak jak .dashboard-container) */
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05); /* Ładny cień */
+    min-height: 60px; /* Minimalna wysokość */
+}
+
+/* Style dla wszystkich linków w navbarze */
+.navbar a {
+    color: #34495e; /* Ciemny, czytelny tekst */
+    text-decoration: none; /* Usunięcie podkreślenia */
+    font-weight: 600;
+    padding: 0 1rem; /* Wewnętrzny padding linku */
+    height: 40px; /* Stała wysokość dla klikalnego obszaru */
+    display: inline-flex; /* Pozwala użyć height i align-items */
+    align-items: center;
+    border-radius: 5px;
+    transition: background-color 0.2s ease-out, color 0.2s ease-out;
+}
+
+/* Efekt :hover dla linków */
+.navbar a:hover {
+    background-color: #f0f2f5; /* Subtelne tło (jak tło body) */
+    color: #2c3e50;
+}
+
+/* Przycisk Wyloguj */
+.navbar button {
+    background-color: transparent;
+    border: none;
+    color: #34495e;
+    font-family: Arial, sans-serif; /* Dopasowanie czcionki */
+    font-size: 1rem; /* Dopasowanie rozmiaru */
+    font-weight: 600;
+    padding: 0 1rem;
+    height: 40px;
+    border-radius: 5px;
+    cursor: pointer;
+    transition: background-color 0.2s ease-out, color 0.2s ease-out;
+}
+
+/* Efekt :hover dla przycisku Wyloguj */
+.navbar button:hover {
+    background-color: #fbeae9; /* Lekko czerwone tło */
+    color: #c0392b; /* Czerwony tekst */
+}
+
+/* --- Wyrównanie (Magia Flexbox) --- */
+
+/* Przycisk "Wyloguj" */
+.navbar button {
+    margin-left: auto; /* Wypycha przycisk Wyloguj na prawo */
+}
+
+/* Link "Zaloguj" (kiedy użytkownik jest niezalogowany) */
+.navbar a[href="/login"] {
+    margin-left: auto; /* Wypycha link Zaloguj na prawo */
+
+    /* Dodajemy mu styl przycisku "Call to Action" */
+    background-color: #3498db;
+    color: white;
+}
+.navbar a[href="/login"]:hover {
+    background-color: #2980b9;
+    color: white;
+}
+
+/* --- Style dla Modala (Edycja) --- */
+.modal-backdrop {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    background-color: rgba(0, 0, 0, 0.6);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 1000;
+}
+
+.modal-content {
+    background: #ffffff;
+    padding: 2rem;
+    border-radius: 8px;
+    box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+    width: 100%;
+    max-width: 500px;
+    z-index: 1001;
+    animation: modal-fade-in 0.3s ease-out;
+}
+
+@keyframes modal-fade-in {
+    from {
+        opacity: 0;
+        transform: translateY(-20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.modal-content h2 {
+    margin-top: 0;
+    color: #2c3e50;
+    text-align: center;
+}
+
+.modal-form {
+    display: flex;
+    flex-direction: column;
+}
+
+.modal-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 1rem;
+    margin-top: 1.5rem;
+}
+
+/* --- POPRAWKA STYLÓW PRZYCISKÓW --- */
+
+/* Wspólne style dla OBU przycisków w modalu */
+.modal-actions .btn-cancel,
+.modal-actions .btn-submit {
+    padding: 10px 16px;  /* Dodany padding */
+    color: white;          /* Dodany biały tekst */
+    border: none;          /* Usunięta domyślna ramka */
+    border-radius: 4px;    /* Zaokrąglenie */
+    cursor: pointer;       /* Kursor */
+    font-size: 0.95rem;    /* Rozmiar czcionki */
+    font-weight: 600;      /* Pogrubienie */
+    transition: background-color 0.2s; /* Płynne przejście */
+}
+
+/* Specyficzny kolor dla Anuluj */
+.modal-actions .btn-cancel {
+    background-color: #7f8c8d;
+}
+.modal-actions .btn-cancel:hover {
+    background-color: #6c7a7b;
+}
+
+/* Specyficzny kolor dla Zapisz zmiany */
+.modal-actions .btn-submit {
+    background-color: #27ae60;
+}
+.modal-actions .btn-submit:hover {
+    background-color: #229954;
+}
+
+/* --- Poprawka stylów dla przycisków w SeriesManager --- */
+
+/* Styl dla głównego przycisku (Zapisz / Dodaj) */
+.series-form .btn-submit {
+    width: 100%;
+    padding: 10px;
+    background-color: #27ae60; /* Zielony "Zapisz" */
+    color: white;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 1rem;
+    font-weight: 600;
+    transition: background-color 0.2s;
+    margin-bottom: 10px; /* Odstęp od przycisku Anuluj */
+}
+.series-form .btn-submit:hover {
+    background-color: #229954;
+}
+
+/* Poprawka dla przycisku Anuluj, aby był spójny */
+.series-form .btn-cancel {
+    width: 100%;
+    padding: 10px;
+    background-color: #7f8c8d;
+    color: white;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 1rem;
+    font-weight: 600;
+    transition: background-color 0.2s;
+    margin: 0; /* Resetujemy stary margines, jeśli istniał */
+}
+.series-form .btn-cancel:hover {
+    background-color: #6c7a7b;
+}
+
+/* --- Style dla przeniesionego przycisku Drukuj --- */
+.print-button-container {
+    display: flex;
+    justify-content: flex-start; /* <-- TUTAJ JEST ZMIANA (z flex-end) */
+    margin-bottom: 1rem;
+    margin-top: 1rem;
+}
+
+.btn-print-main {
+    background-color: #34495e;
+    color: white;
+    border: none;
+    padding: 10px 16px;
+    border-radius: 5px;
+    cursor: pointer;
+    font-size: 1rem;
+    font-weight: 600;
+    transition: background-color 0.2s, transform 0.1s;
+}
+.btn-print-main:hover {
+    background-color: #2c3e50;
+    transform: translateY(-1px);
+}
