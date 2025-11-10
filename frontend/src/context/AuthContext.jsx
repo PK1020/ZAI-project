@@ -1,7 +1,8 @@
 import React, { createContext, useState, useContext, useEffect, useCallback } from 'react'; // 1. Dodano useEffect i useCallback
 import axios from 'axios';
 
-const API_URL = ''; // Używamy proxy Vite
+//const API_URL = ''; // Używamy proxy Vite
+const API_URL = import.meta.env.VITE_API_URL || '';
 
 const AuthContext = createContext(null);
 
