@@ -7,14 +7,13 @@ import TableComponent from '../components/TableComponent.jsx';
 import MeasurementForm from '../components/MeasurementForm.jsx';
 import EditMeasurementModal from '../components/EditMeasurementModal.jsx';
 
-const API_URL = import.meta.env.VITE_API_URL || '/api';
+const API_URL = import.meta.env.VITE_API_URL || '';
 
 function Dashboard() {
     const { isAuthenticated, user } = useAuth();
     const [measurements, setMeasurements] = useState([]);
     const [series, setSeries] = useState([]);
     const [error, setError] = useState(null);
-
     const [highlightedPointId, setHighlightedPointId] = useState(null);
     const [editingRecord, setEditingRecord] = useState(null);
 
@@ -25,7 +24,7 @@ function Dashboard() {
     });
 
     const fetchSeries = () => {
-        axios.get(`${API_URL}/series`)
+        axios.get(`${API_URL}/api/series`)
             .then(res => {
                 setSeries(res.data);
                 setFilters(prev => ({
@@ -38,7 +37,7 @@ function Dashboard() {
 
     const fetchMeasurements = () => {
         setError(null);
-        axios.get(`${API_URL}/measurements`, {
+        axios.get(`${API_URL}/api/measurements`, {
             params: {
                 start: filters.start || null,
                 end: filters.end || null,
@@ -52,11 +51,45 @@ function Dashboard() {
     useEffect(() => {
         fetchSeries();
         fetchMeasurements();
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, []);
 
-    const handleTimeFilterApply = () => {
-        setHighlightedPointId(null);
+    useEffect(() => {
         fetchMeasurements();
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [filters.start, filters.end, filters.selectedSeries]);
+
+    const handlePrint = () => {
+        window.print();
+    };
+
+    const handleRowClick = (id) => {
+        setHighlightedPointId(prevId => (prevId === id ? null : id));
+    };
+
+    const handleDelete = async (id) => {
+        if (window.confirm('Czy na pewno chcesz usunąć ten pomiar?')) {
+            try {
+                await axios.delete(`${API_URL}/api/measurements/${id}`);
+                fetchMeasurements();
+            } catch (err) {
+                setError('Nie udało się usunąć pomiaru.');
+            }
+        }
+    };
+
+    const handleSaveEdit = async (updatedRecord) => {
+        try {
+            await axios.put(`${API_URL}/api/measurements/${updatedRecord.id}`, {
+                value: updatedRecord.value,
+                series_id: updatedRecord.series_id,
+                timestamp: updatedRecord.timestamp,
+            });
+            setEditingRecord(null);
+            fetchMeasurements();
+        } catch (err) {
+            setError('Nie udało się zaktualizować pomiaru.');
+        }
     };
 
     const handleSeriesToggle = (seriesId) => {
@@ -70,55 +103,24 @@ function Dashboard() {
         setFilters(prev => ({ ...prev, selectedSeries: newSelection }));
     };
 
-    const handlePrint = () => {
-        window.print();
+    const handleFiltersChange = (field, value) => {
+        setFilters(prev => ({ ...prev, [field]: value }));
     };
-
-    const handleRowClick = (id) => {
-        setHighlightedPointId(prevId => (prevId === id ? null : id));
-    };
-
-    const handleDelete = async (id) => {
-        if (window.confirm('Czy na pewno chcesz usunąć ten pomiar?')) {
-            try {
-                await axios.delete(`${API_URL}/measurements/${id}`);
-                fetchMeasurements();
-            } catch (err) {
-                setError('Nie udało się usunąć pomiaru.');
-            }
-        }
-    };
-
-    const handleEdit = (record) => {
-        setError(null);
-        setEditingRecord(record);
-    };
-
-    const handleSaveEdit = () => {
-        fetchMeasurements();
-        setEditingRecord(null);
-    };
-
-    const filteredMeasurements = measurements.filter(m =>
-        filters.selectedSeries.has(m.series_id)
-    );
 
     return (
         <div className="dashboard-container">
-            {error && <div className="message-error no-print">{error}</div>}
-
+            {error && <div className="message-error">{error}</div>}
             {isAuthenticated && (
-                <div className="welcome-box no-print">
+                <div className="message-success">
                     Witaj, <strong>{user?.username}</strong>! Możesz teraz edytować dane.
                 </div>
             )}
 
-            <div className="controls-bar no-print">
-                {/* Pasek filtrów */}
+            <section className="filters-section no-print">
                 <fieldset>
                     <legend>Wybierz serie</legend>
                     {series.map(s => (
-                        <label key={s.id} style={{ color: s.color, display: 'inline-block', marginRight: '1rem' }}>
+                        <label key={s.id} className="checkbox-label">
                             <input
                                 type="checkbox"
                                 checked={filters.selectedSeries.has(s.id)}
@@ -131,51 +133,58 @@ function Dashboard() {
 
                 <fieldset>
                     <legend>Ogranicz przedział czasu</legend>
-                    <label>Od: <input type="datetime-local" value={filters.start} onChange={e => setFilters(p => ({ ...p, start: e.target.value }))} /></label>
-                    <label>Do: <input type="datetime-local" value={filters.end} onChange={e => setFilters(p => ({ ...p, end: e.target.value }))} /></label>
-                    <button onClick={handleTimeFilterApply}>Filtruj Czas</button>
+                    <label>
+                        Od:{' '}
+                        <input
+                            type="datetime-local"
+                            value={filters.start}
+                            onChange={e => handleFiltersChange('start', e.target.value)}
+                        />
+                    </label>
+                    <label>
+                        Do:{' '}
+                        <input
+                            type="datetime-local"
+                            value={filters.end}
+                            onChange={e => handleFiltersChange('end', e.target.value)}
+                        />
+                    </label>
+                    <button type="button" onClick={fetchMeasurements} className="btn-filter">
+                        Filtruj Czas
+                    </button>
                 </fieldset>
+            </section>
 
-                {/* PRZYCISK DRUKOWANIA USUNIĘTY STĄD */}
-            </div>
+            <MeasurementForm
+                series={series}
+                onMeasurementAdded={fetchMeasurements}
+                setError={setError}
+            />
 
-            {isAuthenticated && (
-                <MeasurementForm
-                    series={series}
-                    onMeasurementAdded={fetchMeasurements}
-                    setError={setError}
-                />
-            )}
-
-            {/* NOWA SEKCJA DLA PRZYCISKU DRUKOWANIA (MIĘDZY FORMULARZEM A WYKRESEM) */}
-            <div className="print-button-container no-print">
-                <button onClick={handlePrint} className="btn-print-main">
-                    Drukuj Widok
-                </button>
-            </div>
-
-            <div className="printable-area">
+            <section className="chart-table-section">
                 <div className="chart-wrapper">
                     <h2>Wykres</h2>
                     <ChartComponent
                         data={measurements}
-                        selectedSeries={filters.selectedSeries}
                         highlightedPointId={highlightedPointId}
+                        onPointClick={setHighlightedPointId}
                     />
                 </div>
 
                 <div className="table-wrapper">
                     <h2>Tabela Danych</h2>
                     <TableComponent
-                        data={filteredMeasurements}
-                        isEditable={isAuthenticated}
-                        onRowClick={handleRowClick}
-                        onEdit={handleEdit}
-                        onDelete={handleDelete}
+                        data={measurements}
                         highlightedPointId={highlightedPointId}
+                        onRowClick={handleRowClick}
+                        onDelete={handleDelete}
+                        onEdit={setEditingRecord}
                     />
+                    <button onClick={handlePrint} className="btn-print no-print">
+                        Drukuj Widok
+                    </button>
                 </div>
-            </div>
+            </section>
 
             {editingRecord && (
                 <EditMeasurementModal
