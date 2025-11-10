@@ -7,7 +7,9 @@ import TableComponent from '../components/TableComponent.jsx';
 import MeasurementForm from '../components/MeasurementForm.jsx';
 import EditMeasurementModal from '../components/EditMeasurementModal.jsx';
 
-const API_URL = import.meta.env.VITE_API_URL || '/api';
+// Jeśli VITE_API_URL jest ustawione (Render), używamy go;
+// lokalnie będzie pusty string, więc wyjdzie po prostu "/api/..."
+const API_URL = import.meta.env.VITE_API_URL || '';
 
 function Dashboard() {
     const { isAuthenticated, user } = useAuth();
@@ -25,7 +27,8 @@ function Dashboard() {
     });
 
     const fetchSeries = () => {
-        axios.get(`${API_URL}/series`)
+        axios
+            .get(`${API_URL}/api/series`)
             .then(res => {
                 setSeries(res.data);
                 setFilters(prev => ({
@@ -38,13 +41,15 @@ function Dashboard() {
 
     const fetchMeasurements = () => {
         setError(null);
-        axios.get(`${API_URL}/measurements`, {
-            params: {
-                start: filters.start || null,
-                end: filters.end || null,
-                series_id: Array.from(filters.selectedSeries).join(',') || null
-            }
-        })
+        axios
+            .get(`${API_URL}/api/measurements`, {
+                params: {
+                    start: filters.start || null,
+                    end: filters.end || null,
+                    series_id:
+                        Array.from(filters.selectedSeries).join(',') || null
+                }
+            })
             .then(res => setMeasurements(res.data))
             .catch(err => setError('Nie można pobrać pomiarów'));
     };
@@ -52,6 +57,7 @@ function Dashboard() {
     useEffect(() => {
         fetchSeries();
         fetchMeasurements();
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, []);
 
     const handleTimeFilterApply = () => {
@@ -59,7 +65,7 @@ function Dashboard() {
         fetchMeasurements();
     };
 
-    const handleSeriesToggle = (seriesId) => {
+    const handleSeriesToggle = seriesId => {
         setHighlightedPointId(null);
         const newSelection = new Set(filters.selectedSeries);
         if (newSelection.has(seriesId)) {
@@ -74,14 +80,14 @@ function Dashboard() {
         window.print();
     };
 
-    const handleRowClick = (id) => {
+    const handleRowClick = id => {
         setHighlightedPointId(prevId => (prevId === id ? null : id));
     };
 
-    const handleDelete = async (id) => {
+    const handleDelete = async id => {
         if (window.confirm('Czy na pewno chcesz usunąć ten pomiar?')) {
             try {
-                await axios.delete(`${API_URL}/measurements/${id}`);
+                await axios.delete(`${API_URL}/api/measurements/${id}`);
                 fetchMeasurements();
             } catch (err) {
                 setError('Nie udało się usunąć pomiaru.');
@@ -89,7 +95,7 @@ function Dashboard() {
         }
     };
 
-    const handleEdit = (record) => {
+    const handleEdit = record => {
         setError(null);
         setEditingRecord(record);
     };
@@ -109,7 +115,8 @@ function Dashboard() {
 
             {isAuthenticated && (
                 <div className="welcome-box no-print">
-                    Witaj, <strong>{user?.username}</strong>! Możesz teraz edytować dane.
+                    Witaj, <strong>{user?.username}</strong>! Możesz teraz
+                    edytować dane.
                 </div>
             )}
 
@@ -118,7 +125,14 @@ function Dashboard() {
                 <fieldset>
                     <legend>Wybierz serie</legend>
                     {series.map(s => (
-                        <label key={s.id} style={{ color: s.color, display: 'inline-block', marginRight: '1rem' }}>
+                        <label
+                            key={s.id}
+                            style={{
+                                color: s.color,
+                                display: 'inline-block',
+                                marginRight: '1rem'
+                            }}
+                        >
                             <input
                                 type="checkbox"
                                 checked={filters.selectedSeries.has(s.id)}
@@ -131,12 +145,28 @@ function Dashboard() {
 
                 <fieldset>
                     <legend>Ogranicz przedział czasu</legend>
-                    <label>Od: <input type="datetime-local" value={filters.start} onChange={e => setFilters(p => ({ ...p, start: e.target.value }))} /></label>
-                    <label>Do: <input type="datetime-local" value={filters.end} onChange={e => setFilters(p => ({ ...p, end: e.target.value }))} /></label>
+                    <label>
+                        Od:{' '}
+                        <input
+                            type="datetime-local"
+                            value={filters.start}
+                            onChange={e =>
+                                setFilters(p => ({ ...p, start: e.target.value }))
+                            }
+                        />
+                    </label>
+                    <label>
+                        Do:{' '}
+                        <input
+                            type="datetime-local"
+                            value={filters.end}
+                            onChange={e =>
+                                setFilters(p => ({ ...p, end: e.target.value }))
+                            }
+                        />
+                    </label>
                     <button onClick={handleTimeFilterApply}>Filtruj Czas</button>
                 </fieldset>
-
-                {/* PRZYCISK DRUKOWANIA USUNIĘTY STĄD */}
             </div>
 
             {isAuthenticated && (
@@ -147,7 +177,6 @@ function Dashboard() {
                 />
             )}
 
-            {/* NOWA SEKCJA DLA PRZYCISKU DRUKOWANIA (MIĘDZY FORMULARZEM A WYKRESEM) */}
             <div className="print-button-container no-print">
                 <button onClick={handlePrint} className="btn-print-main">
                     Drukuj Widok
